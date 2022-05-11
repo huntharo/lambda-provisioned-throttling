@@ -1,0 +1,12 @@
+.vscode/
+Dockerfile*
+Makefile
+docker-compose.yml
+.dockerignore
+.git
+.gitignore
+*.log
+**/node_modules/
+node_modules/
+cdk.out/
+**/invoke-payload.json
