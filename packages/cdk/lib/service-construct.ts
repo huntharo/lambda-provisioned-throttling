@@ -6,8 +6,8 @@ import * as elbv2targets from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 import * as apigwy from '@aws-cdk/aws-apigatewayv2-alpha';
+import * as apigwyInt from '@aws-cdk/aws-apigatewayv2-integrations-alpha';
 import * as logs from 'aws-cdk-lib/aws-logs';
-import { HttpRouteIntegration } from './route-integration';
 
 interface ServiceProps {
   /**
@@ -288,17 +288,10 @@ export class ServiceConstruct extends Construct implements IServiceExports {
       autoDeploy: true,
     });
 
-    const integration = new apigwy.HttpIntegration(this, 'router-integration', {
-      integrationType: apigwy.HttpIntegrationType.AWS_PROXY,
-      httpApi: this._httpApi,
-      integrationUri: alias.functionArn,
-      payloadFormatVersion: apigwy.PayloadFormatVersion.VERSION_2_0,
-    });
-
     const route = new apigwy.HttpRoute(this, 'route-default', {
       httpApi: this._httpApi,
       routeKey: apigwy.HttpRouteKey.DEFAULT,
-      integration: new HttpRouteIntegration('route-int', { integration }),
+      integration: new apigwyInt.HttpLambdaIntegration('route-int', alias),
     });
 
     let routeArn = route.routeArn;
