@@ -4,6 +4,11 @@ This repository contains an example of a possible bug with Lambda Provisioned Co
 
 This behavior does not match what is expected and it is demonstrated that an ALB pointing to a Provisioned Concurrency Lambda Alias does not reject requests with a 400 response code beyond the Provisioned Concurrency value.  This seems to confirm that there may be a bug with Function URLs that have Provisioned Concurrency set.
 
+Indications of the error:
+- 400 Status Code on response
+- `x-amzn-ErrorType: ThrottlingException` header on response
+- `{"message":"Rate Exceeded."}` response body
+
 The CDK stack deploys 2 different examples both with an ALB and a Function URL:
 
 - Docker-based Lambda built for ARM64
@@ -97,3 +102,27 @@ Result: OK
 Result: FAILS - 98% of requests return a `400` status code
 
 ![](art/function-url-provisioned-c-100.png)
+
+### Detail of Error
+
+```
+curl -v "https://[lambda-provisioned-alias-url].lambda-url.us-east-1.on.aws/"
+> GET / HTTP/1.1
+> Host: [lambda-provisioned-alias-url].lambda-url.us-east-1.on.aws
+> User-Agent: curl/7.79.1
+> Accept: */*
+> 
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 400 Bad Request
+< Date: Wed, 11 May 2022 01:08:24 GMT
+< Content-Type: application/json
+< Content-Length: 28
+< Connection: keep-alive
+< x-amzn-RequestId: 1db11618-724e-4940-83ce-f5e4069c7593
+< x-amzn-ErrorType: ThrottlingException
+< 
+* Connection #0 to host [lambda-provisioned-alias-url].lambda-url.us-east-1.on.aws left intact
+{"message":"Rate Exceeded."}
+```
+
+![](art/lambda-function-url-provisioned-curl-error.png)
