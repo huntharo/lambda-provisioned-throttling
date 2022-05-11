@@ -126,3 +126,7 @@ curl -v "https://[lambda-provisioned-alias-url].lambda-url.us-east-1.on.aws/"
 ```
 
 ![](art/lambda-function-url-provisioned-curl-error.png)
+
+### Not Constrained by Function Concurrency / Account Reserved Concurrency
+
+![](art/lambda-function-concurrency.png)
