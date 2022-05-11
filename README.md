@@ -13,7 +13,7 @@ The AWS Lambda URLs are configured with security set to `lambda.FunctionUrlAuthT
 
 [auth type config location](packages/cdk/bin/cdk.ts#L12)
 
-# Usage
+# Usage / Deployment
 
 ```
 nvm use
@@ -41,3 +41,57 @@ curl -v [paste the URL here]
 curl -v [paste the URL here]
 ```
 
+## Example Lambda Function Alias with Provisioned Concurrency
+
+![](art/lambda-function-url-provisioned-alias.png)
+
+# Testing Concurrency Limits
+
+Test concurrency limits using `ab` (apache bench) or `hey` (arguments are the same for both).
+
+[hey](https://github.com/rakyll/hey) - Can be installed as a precompiled binary or via `brew install hey` on Mac.
+
+The default provisioned concurrency of the Lambda Aliases is `5`.
+
+In general, test the following:
+- Run with `-c` (concurrent requests) equal to provisioned concurrency
+  - In this case there should be no `400` status code responses from any URL
+- Run with `-c` much larger than provisioned concurrency (e.g. `-c 100`)
+  - In this case the `$LATEST` ALB URL, Provisioned Alias ALB URL, and `$LATEST` Function URL should return no `400` status code responses
+  - The Provisioned Alias Function URL will return a large portion of `400` status code responses and will never improve (it's not an issue of needing to start more instances... it simply will not start more instances or send more than `provisioned concurrency` requests to the function)
+
+## Example Command
+
+```
+hey -c 100 -n 1000 https://[function-url-id].lambda-url.us-east-1.on.aws/
+```
+
+# Results
+
+## ALB URL - Provisioned Concurrency 5 - 100 Concurrent Requests
+
+Result: OK
+
+![](art/alb-url-provisioned-c-100.png)
+
+### Confirmation that `/provisioned` is going to ProvisionedVersion alias
+
+![](art/alb-url-provisioned-curl.png)
+
+## Function URL - Provisioned Concurrency 5 - 5 Concurrent Requests
+
+Result: OK
+
+![](art/function-url-provisioned-c-5.png)
+
+## Function URL - Non-Provisioned Concurrency / $LATEST - 100 Concurrent Requests
+
+Result: OK
+
+![](art/function-url-non-provisioned-c-100.png)
+
+## Function URL - Provisioned Concurrency 5 - 100 Concurrent Requests
+
+Result: FAILS - 98% of requests return a `400` status code
+
+![](art/function-url-provisioned-c-100.png)
