@@ -2,6 +2,8 @@
 
 This repository contains an example of a possible bug with Lambda Provisioned Concurrency where the function will not scale above the Provisioned Concurrency value, even with Reserved Concurrency set far higher (to account-level unreserved concurrency).
 
+This behavior does not match what is expected and it is demonstrated that an ALB pointing to a Provisioned Concurrency Lambda Alias does not reject requests with a 400 response code beyond the Provisioned Concurrency value.  This seems to confirm that there may be a bug with Function URLs that have Provisioned Concurrency set.
+
 The CDK stack deploys 2 different examples both with an ALB and a Function URL:
 
 - Docker-based Lambda built for ARM64
