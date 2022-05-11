@@ -9,12 +9,13 @@
   },
   "private": true,
   "devDependencies": {
-    "@aws-cdk/assert": "^2.21.1",
+    "@aws-cdk/aws-apigatewayv2-alpha": "2.23.0-alpha.0",
+    "@aws-cdk/assert": "^2.23.0",
     "@cloudcomponents/cdk-temp-stack": "^2.1.0",
     "@types/jest": "^26.0.24",
     "@types/js-yaml": "^4.0.2",
     "@types/node": "^16.9.2",
-    "aws-cdk-lib": "^2.21.1",
+    "aws-cdk-lib": "^2.23.0",
     "constructs": "^10.0.5",
     "source-map-support": "^0.5.21"
   },

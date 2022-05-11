@@ -5,9 +5,9 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as elbv2targets from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
+import * as apigwy from '@aws-cdk/aws-apigatewayv2-alpha';
 import * as logs from 'aws-cdk-lib/aws-logs';
-import path from 'path';
-import os from 'os';
+import { HttpRouteIntegration } from './route-integration';
 
 interface ServiceProps {
   /**
@@ -90,6 +90,9 @@ export interface IServiceExports {
 
   readonly albUrl: string;
   readonly albProvisionedUrl: string;
+
+  readonly httpApi: apigwy.HttpApi;
+  readonly apigwyProvisionedUrl: string;
 }
 
 export class ServiceConstruct extends Construct implements IServiceExports {
@@ -121,6 +124,16 @@ export class ServiceConstruct extends Construct implements IServiceExports {
   private _albProvisionedUrl: string;
   public get albProvisionedUrl(): string {
     return this._albProvisionedUrl;
+  }
+
+  private _httpApi: apigwy.HttpApi;
+  public get httpApi(): apigwy.HttpApi {
+    return this._httpApi;
+  }
+
+  private _apigwyProvisionedUrl: string;
+  public get apigwyProvisionedUrl(): string {
+    return this._apigwyProvisionedUrl;
   }
 
   /**
@@ -202,6 +215,10 @@ export class ServiceConstruct extends Construct implements IServiceExports {
         : {}),
     });
 
+    //
+    // Create Function URLs
+    //
+
     // Create the function URL on the Alias so it can use Provisioned Concurrency
     this._serviceFuncUrl = this._serviceFunc.addFunctionUrl({
       authType,
@@ -212,7 +229,9 @@ export class ServiceConstruct extends Construct implements IServiceExports {
       authType,
     });
 
+    //
     // Create the ALB
+    //
     this._alb = new elbv2.ApplicationLoadBalancer(this, 'alb', {
       internetFacing: true,
       vpc: props.vpc,
@@ -251,5 +270,49 @@ export class ServiceConstruct extends Construct implements IServiceExports {
 
     this._albUrl = `http://${this._alb.loadBalancerDnsName}/`;
     this._albProvisionedUrl = `http://${this._alb.loadBalancerDnsName}/provisioned`;
+
+    //
+    // CreateAPI Gateway
+    //
+    this._httpApi = new apigwy.HttpApi(this, 'gwy', {
+      createDefaultStage: false,
+      apiName: lambdaFuncServiceName,
+    });
+    if (autoDeleteEverything) {
+      this._httpApi.applyRemovalPolicy(RemovalPolicy.DESTROY);
+    }
+
+    // Create the stage
+    const stage = new apigwy.HttpStage(this, 'stage', {
+      httpApi: this._httpApi,
+      autoDeploy: true,
+    });
+
+    const integration = new apigwy.HttpIntegration(this, 'router-integration', {
+      integrationType: apigwy.HttpIntegrationType.AWS_PROXY,
+      httpApi: this._httpApi,
+      integrationUri: alias.functionArn,
+      payloadFormatVersion: apigwy.PayloadFormatVersion.VERSION_2_0,
+    });
+
+    const route = new apigwy.HttpRoute(this, 'route-default', {
+      httpApi: this._httpApi,
+      routeKey: apigwy.HttpRouteKey.DEFAULT,
+      integration: new HttpRouteIntegration('route-int', { integration }),
+    });
+
+    let routeArn = route.routeArn;
+    // Remove the trailing `/` on the ARN, which is not correct
+    routeArn = routeArn.slice(0, routeArn.length - 1);
+
+    // Grant API Gateway permission to invoke the Lambda
+    new lambda.CfnPermission(this, 'gateway-invoke', {
+      action: 'lambda:InvokeFunction',
+      functionName: alias.functionName,
+      principal: 'apigateway.amazonaws.com',
+      sourceArn: routeArn,
+    });
+
+    this._apigwyProvisionedUrl = stage.url || '';
   }
 }

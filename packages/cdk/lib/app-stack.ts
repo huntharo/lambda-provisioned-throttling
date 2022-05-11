@@ -142,6 +142,10 @@ export class AppStack extends Stack {
       value: serviceARMZip.albProvisionedUrl,
       exportName: `${this.stackName}-alb-url-zip-provisinoed`,
     });
+    new CfnOutput(this, 'service-apigwy-zip-provisioned', {
+      value: serviceARMZip.apigwyProvisionedUrl,
+      exportName: `${this.stackName}-apigwy-zip-provisinoed`,
+    });
 
     // new CfnOutput(this, 'service-url-amd', {
     //   value: serviceAMD.serviceFuncUrl.url,
