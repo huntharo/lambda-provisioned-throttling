@@ -203,11 +203,12 @@ export class ServiceConstruct extends Construct implements IServiceExports {
     });
 
     // Create the function URL on the Alias so it can use Provisioned Concurrency
-    this._serviceFuncUrl = alias.addFunctionUrl({
+    this._serviceFuncUrl = this._serviceFunc.addFunctionUrl({
       authType,
     });
+
     // Create a "current version" URL that does not have Provisioned Concurrency
-    this._serviceFuncProvisionedUrl = this._serviceFunc.addFunctionUrl({
+    this._serviceFuncProvisionedUrl = alias.addFunctionUrl({
       authType,
     });
 
