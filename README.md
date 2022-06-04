@@ -1,3 +1,7 @@
+# Status
+
+This was confirmed to be a bug in Lambda Function URLs.  The fix was deployed around or before June 1, 2022 and provisioned concurrency for Function URLs no longer causes 400 status code / ThrottlingException responses if the number of concurrent requests sent is higher than the provisioned concurrency of the Function URL associated with a Lambda version or alias.
+
 # Overview
 
 This repository contains an example of a possible bug with Lambda Provisioned Concurrency where the function will not scale above the Provisioned Concurrency value, even with Reserved Concurrency set far higher (to account-level unreserved concurrency).
